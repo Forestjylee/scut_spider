@@ -11,7 +11,7 @@ import redis
 class RedisPipeline(object):
     """
     与redis数据库交互的接口
-    windows版本的redis数据库下载地址:
+    windows版本的redis数据库下载地址:https://github.com/MSOpenTech/redis/releases
     """
     def __init__(
             self,
@@ -39,39 +39,28 @@ class RedisPipeline(object):
 
     def get_length(self):
         """
-        获取当前数据表中元素的个数
+        获取当前集合中元素的个数
         :return: 元素的个数
         """
-        return self._redis_obj.llen(self.name)
+        return self._redis_obj.scard(self.name)
 
-    def get_first_item(self) -> str:
+    def get_one_item(self) -> str:
         """
-        取出redis队列中第一个元素
+        取出redis集合中的随机一个元素
         :return: item | None(队列为空时)
         """
-        return self._redis_obj.lpop(self.name)
+        return self._redis_obj.spop(self.name)
 
-    def push_item_in_queue(self, item):
+    def add_items_in_set(self, items) -> int:
         """
-        将item加入redis队列中
-        :param item: 需要push的元素
-        :return: 队列当前长度
+        将多个item加入redis集合中
+        :param items: 需要新增的元素
+        :return: 成功添加进入集合中的元素的个数
         """
-        return self._redis_obj.rpush(self.name, item)
-
-    def push_items_in_queue(self, items):
-        """
-        将多个items压进队列
-        :param items: 需要push的元素
-        :return: 队列当前长度
-        """
-        if items:
-            for item in items[:-1]:
-                self._redis_obj.rpush(self.name, item)
-            return self._redis_obj.rpush(self.name, items[-1])
+        return self._redis_obj.sadd(self.name, *items)
 
     def is_queue_empty(self) -> bool:
-        """
+        """s
         判断redis队列是否为空
         :return: True | False
         """
@@ -82,7 +71,7 @@ class RedisPipeline(object):
 
     def is_exists(self) -> bool:
         """
-        判断队列是否存在
+        判断集合是否存在
         :return: True | False
         """
         nums = self._redis_obj.exists(self.name)
