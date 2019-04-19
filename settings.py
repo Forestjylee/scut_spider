@@ -23,8 +23,12 @@ REDIS_HOST = 'localhost'
 REDIS_PORT = 6379
 
 
-# 存放数据的redis集合名称
+# 存放待请求url的redis集合名称
 REDIS_SET_NAME = 'Default'
+
+
+# 已请求过的url集合名称
+CRAWLED_SET_NAME = 'Crawled'
 
 
 # 是否启用多进程模式(True|False)
