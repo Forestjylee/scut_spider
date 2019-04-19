@@ -19,10 +19,11 @@ def get_response(url: str) -> HTMLResponse:
     return session.get(url)
 
 
-def parse_response(response: HTMLResponse, limit_domain: str) -> dict:
+def parse_response(response: HTMLResponse, source_url: str, limit_domain: str) -> dict:
     """
     解析url的响应
     :param response: url的响应
+    :param source_url: response的来源url
     :param limit_domain: 限制保留的域名字符串
     :return: 需要获取的信息 {
         'source': 此响应来自哪个url,
@@ -31,9 +32,11 @@ def parse_response(response: HTMLResponse, limit_domain: str) -> dict:
     }
     """
     info = {
-        'source': response.url,
+        'source': source_url,
         'raw_text': response.html.text,
-        'links': [url for url in response.html.absolute_links if limit_domain in url],
+        'links': [
+            url for url in response.html.absolute_links if limit_domain in url and url != source_url
+        ],
     }
     return info
 
@@ -51,5 +54,5 @@ def crawl(url: str, limit_domain: str) -> dict:
     }
     """
     response = get_response(url)
-    info = parse_response(response, limit_domain)
+    info = parse_response(response, url, limit_domain)
     return info
