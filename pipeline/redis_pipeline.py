@@ -17,16 +17,19 @@ class RedisPipeline(object):
             self,
             host: str='localhost',
             port: str='6379',
-            name: str='Default'
+            name: str='Default',
+            crawled_name: str='Crawled',
     ):
         """
         :param host: redis数据所在的ip地址
         :param port: redis数据库所在的端口
-        :param name: 数据表名称
+        :param name: 存储待请求url集合名称
+        :param crawled_name: 存储被请求过url集合的名称
         """
         self.host = host
         self.port = port
         self.name = name
+        self.crawled_name = crawled_name
         self._redis_obj = self.__get_redis_obj()
 
     def __get_redis_obj(self) -> redis.Redis:
@@ -44,20 +47,26 @@ class RedisPipeline(object):
         """
         return self._redis_obj.scard(self.name)
 
-    def get_one_item(self) -> str:
+    def get_one_url(self) -> str:
         """
-        取出redis集合中的随机一个元素
-        :return: item | None(队列为空时)
+        取出redis集合中的随机一个url
+        将改url加入到已爬取几集合中
+        :return: url | None(队列为空时)
         """
-        return self._redis_obj.spop(self.name)
+        url = self._redis_obj.spop(self.name)
+        self._redis_obj.sadd(self.crawled_name, url)
+        return url
 
-    def add_items_in_set(self, items) -> int:
+    def add_urls_in_set(self, urls: list) -> None:
         """
-        将多个item加入redis集合中
-        :param items: 需要新增的元素
-        :return: 成功添加进入集合中的元素的个数
+        将多个url加入redis集合中
+        剔除被请求过的url
+        :param urls: 需要新增的元素
+        :return: None
         """
-        return self._redis_obj.sadd(self.name, *items)
+        for url in urls:
+            if not self._redis_obj.sismember(self.crawled_name, url):
+                self._redis_obj.sadd(self.name, url)
 
     def is_queue_empty(self) -> bool:
         """s
