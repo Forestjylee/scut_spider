@@ -12,7 +12,7 @@ from utils.log_helper import get_logger
 from pipeline.redis_pipeline import RedisPipeline
 from pipeline.output_pipeline import OutputPipeline
 from settings import (START_URL, LIMIT_DOMAIN, REDIS_HOST,
-                      REDIS_PORT, REDIS_SET_NAME,
+                      REDIS_PORT, REDIS_SET_NAME, CRAWLED_SET_NAME,
                       MULTIPROCESS_SWITCH, PROCESS_NUM, LOG_FILE_NAME)
 
 
@@ -24,6 +24,7 @@ class Handler(object):
         self.redis_host = REDIS_HOST
         self.redis_port = REDIS_PORT
         self.redis_name = REDIS_SET_NAME
+        self.redis_crawled_name = CRAWLED_SET_NAME
         self.process_num = PROCESS_NUM
         self.log_file_name = LOG_FILE_NAME
 
@@ -46,10 +47,10 @@ class Handler(object):
             if rp.is_queue_empty():
                 break
             try:
-                url = rp.get_one_item()
+                url = rp.get_one_url()
                 info = crawl(url=url, limit_domain=self.limit_domain)
                 op.save(data=info)
-                rp.add_items_in_set(info['links'])
+                rp.add_urls_in_set(info['links'])
                 logger.info(f"{url} has been crawled successfully.")
             except Exception as e:
                 logger.error(repr(e))
@@ -86,7 +87,7 @@ class Handler(object):
         if not rp.is_exists():
             info = crawl(url=self.start_url, limit_domain=self.limit_domain)
             op.save(data=info)
-            rp.add_items_in_set(info['links'])
+            rp.add_urls_in_set(info['links'])
             logger.info(f"{self.start_url} has been crawled successfully.")
 
     def _get_redis_pipeline(self) -> RedisPipeline:
@@ -95,6 +96,7 @@ class Handler(object):
             host=self.redis_host,
             port=self.redis_port,
             name=self.redis_name,
+            crawled_name=self.redis_crawled_name,
         )
 
     def _get_logger(self):
