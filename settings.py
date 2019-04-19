@@ -23,11 +23,11 @@ REDIS_HOST = 'localhost'
 REDIS_PORT = 6379
 
 
-# 存放数据的redis队列名称
-REDIS_QUEUE_NAME = 'Default'
+# 存放数据的redis集合名称
+REDIS_SET_NAME = 'Default'
 
 
-# 是否启用多进程模式(默认开启)
+# 是否启用多进程模式(True|False)
 MULTIPROCESS_SWITCH = True
 
 
@@ -42,7 +42,7 @@ LOG_FILE_NAME = 'scut_spider'
 ##############################################
 
 
-# 是否保存到MongoDB
+# 是否保存到MongoDB(True|False)
 USE_MONGO_PIPELINE = False
 
 
