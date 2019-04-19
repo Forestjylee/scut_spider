@@ -35,7 +35,7 @@ def parse_response(response: HTMLResponse, source_url: str, limit_domain: str) -
         'source': source_url,
         'raw_text': response.html.text,
         'links': [
-            url for url in response.html.absolute_links if limit_domain in url and url != source_url
+            url for url in response.html.absolute_links if limit_domain in url
         ],
     }
     return info
