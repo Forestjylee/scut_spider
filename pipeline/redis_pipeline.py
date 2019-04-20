@@ -55,7 +55,7 @@ class RedisPipeline(object):
         """
         url = self._redis_obj.spop(self.name)
         self._redis_obj.sadd(self.crawled_name, url)
-        return url
+        return str(url, encoding="utf-8")
 
     def add_urls_in_set(self, urls: list) -> None:
         """
