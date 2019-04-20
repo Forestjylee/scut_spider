@@ -6,16 +6,20 @@
 Created by Junyi.
 """
 import pymongo
-from settings import (MONGODB_HOST, MONGODB_PORT,
-                      MONGODB_DATABASE_NAME, MONGODB_COLLECTION_NAME)
 
 
 class MongoPipeline(object):
 
-    def __init__(self):
-        self.db_name = MONGODB_DATABASE_NAME
-        self.collection_name = MONGODB_COLLECTION_NAME
-        self._client = pymongo.MongoClient(host=MONGODB_HOST, port=MONGODB_PORT)
+    def __init__(self, config_parser):
+        """
+        :param config_parser: 配置解析器
+        """
+        self.db_name = config_parser.get("mongoDB", "database_name")
+        self.collection_name = config_parser.get("mongoDB", "collection_name")
+        self._client = pymongo.MongoClient(
+            host=config_parser.get("mongoDB", "host"),
+            port=config_parser.getint("mongoDB", "port"),
+        )
 
     def save_data(self, data: dict) -> None:
         """

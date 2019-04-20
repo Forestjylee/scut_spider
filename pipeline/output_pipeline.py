@@ -7,7 +7,6 @@ Created by Junyi
 """
 from pprint import pprint
 from pipeline.mongo_pipeline import MongoPipeline
-from settings import USE_MONGO_PIPELINE
 
 
 class OutputPipeline(object):
@@ -18,8 +17,12 @@ class OutputPipeline(object):
     若需要保存到文件中则需使用文件锁保证同步，
     推荐保存在数据库中
     """
-    def __init__(self):
-        self.op = MongoPipeline() if USE_MONGO_PIPELINE else PrintPipeline()
+    def __init__(self, config_parser):
+        """
+        :param config_parser: 配置解析器
+        """
+        self.op = MongoPipeline(config_parser) \
+            if config_parser.getboolean("mongoDB", "switch") else PrintPipeline()
 
     def save(self, data: dict):
         """
