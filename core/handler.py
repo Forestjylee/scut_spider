@@ -5,28 +5,31 @@
 @time: 2019/4/18 15:17
 Created by Junyi
 """
+import configparser
 from requests import get
 from multiprocessing import Pool
 from core.spider import crawl
 from utils.log_helper import get_logger
 from pipeline.redis_pipeline import RedisPipeline
 from pipeline.output_pipeline import OutputPipeline
-from settings import (START_URL, LIMIT_DOMAIN, REDIS_HOST,
-                      REDIS_PORT, REDIS_SET_NAME, CRAWLED_SET_NAME,
-                      MULTIPROCESS_SWITCH, PROCESS_NUM, LOG_FILE_NAME)
 
 
 class Handler(object):
     """总调度类"""
+
     def __init__(self):
-        self.start_url = START_URL
-        self.limit_domain = LIMIT_DOMAIN
-        self.redis_host = REDIS_HOST
-        self.redis_port = REDIS_PORT
-        self.redis_name = REDIS_SET_NAME
-        self.redis_crawled_name = CRAWLED_SET_NAME
-        self.process_num = PROCESS_NUM
-        self.log_file_name = LOG_FILE_NAME
+        self._init_config_parser()
+        self.start_url = self._config_parser.get("url", "start_url")
+        self.limit_domain = self._config_parser.get("url", "limit_domain")
+        self.redis_host = self._config_parser.get("redis", "host")
+        self.redis_port = self._config_parser.getint("redis", "port")
+        self.redis_uncrawled_name = self._config_parser.get("redis", "uncrawled_set_name")
+        self.redis_crawled_name = self._config_parser.get("redis", "crawled_set_name")
+        self.is_multiprocess = self._config_parser.getboolean("multiprocess", "switch")
+        self.process_num = self._config_parser.getint("multiprocess", "process_num")
+        self.log_file_name = self._config_parser.get("log", "file_name")
+        self.is_log_to_console = self._config_parser.getboolean("log", "to_console")
+        self.is_log_to_file = self._config_parser.getboolean("log", "to_file")
 
     def _run(self) -> None:
         """
@@ -62,7 +65,7 @@ class Handler(object):
         :return: None
         """
         self.check()
-        if MULTIPROCESS_SWITCH:
+        if self.is_multiprocess:
             pool = Pool(processes=self.process_num)
             for _ in range(self.process_num):
                 pool.apply_async(self._run)
@@ -71,9 +74,10 @@ class Handler(object):
         else:
             self._run()
 
-    def check(self):
+    def check(self) -> None:
         """
-        运行前检查
+        运行前检查网络连通情况
+        若是第一次运行则从起始url开始爬取
         :return: None
         """
         try:
@@ -95,7 +99,7 @@ class Handler(object):
         return RedisPipeline(
             host=self.redis_host,
             port=self.redis_port,
-            name=self.redis_name,
+            name=self.redis_uncrawled_name,
             crawled_name=self.redis_crawled_name,
         )
 
@@ -105,12 +109,19 @@ class Handler(object):
         :return:
         """
         return get_logger(
-            to_console=True,
-            to_file=True,
+            to_console=self.is_log_to_console,
+            to_file=self.is_log_to_file,
             filename=self.log_file_name,
         )
 
-    @staticmethod
-    def _get_output_pipeline() -> OutputPipeline:
+    def _get_output_pipeline(self) -> OutputPipeline:
         """获取输出管道操作对象"""
-        return OutputPipeline()
+        return OutputPipeline(self._config_parser)
+
+    def _init_config_parser(self) -> None:
+        """
+        初始化配置解析器
+        :return: 配置解析器
+        """
+        self._config_parser = configparser.ConfigParser()
+        self._config_parser.read("config.ini", encoding="utf-8")
