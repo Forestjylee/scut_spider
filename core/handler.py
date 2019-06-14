@@ -55,6 +55,8 @@ class Handler(object):
                 op.save(data=info)
                 rp.add_urls_in_set(info['links'])
                 logger.info(f"{url} has been crawled successfully.")
+            except KeyboardInterrupt:
+                break
             except Exception as e:
                 logger.error(repr(e))
 
